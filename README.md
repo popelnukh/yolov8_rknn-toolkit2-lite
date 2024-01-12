@@ -160,22 +160,24 @@ To deploy YOLOv8 with RKNN SDK, follow these two steps:
    Download the source code for YOLOv8 edge inference and install the required dependencies.
 
    ```bash
+   git clone https://github.com/ZIFENG278/yolov8_rknn-toolkit2-lite.git
    # recommand install in virtualenv 
    pip3 install opencv-python-headless scipy
    ```
-
-   Place the copied yolov8n.rknn in this directory.
-
+   
+   copy yolov8n.rknn in yolov8_rknn-toolkit2-lite/model folder.
+   
    Run the yolov8_lite.py script.
-
+   
    ```bash
-   $ python3 yolov8_lite.py 
+   cd yolov8_rknn-toolkit2-lite
+   python3 yolov8_lite.py --model_path your_model.rknn 
    ```
 
    The results of all inferences are saved in the ./result directory.
 
    *Description:*
-
+   
    - `--model_path`: Specify the rknn model path.
    - `--target`: Specify the NPU platform name, default is rk3588. Refer to [here](#Supported-Platforms) for supported platforms.
    - `--img_folder`: Directory containing images for inference, default is ./imgs

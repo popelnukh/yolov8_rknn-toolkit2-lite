@@ -1,0 +1,7 @@
+#to install rknnlite to python venv
+
+pip install rknn_toolkit_lite2-1.6.0-cp38-cp38-linux_aarch64.whl
+
+
+# install all packages
+pip install -r requirements.txt

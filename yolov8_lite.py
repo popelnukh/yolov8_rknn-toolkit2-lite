@@ -15,19 +15,21 @@ NMS_THRESH = 0.45
 
 IMG_SIZE = (640, 640)  # (width, height), such as (1280, 736)
 
-CLASSES = ("person", "bicycle", "car", "motorbike ", "aeroplane ", "bus ", "train", "truck ", "boat", "traffic light",
-           "fire hydrant", "stop sign ", "parking meter", "bench", "bird", "cat", "dog ", "horse ", "sheep", "cow",
-           "elephant",
-           "bear", "zebra ", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis",
-           "snowboard", "sports ball", "kite",
-           "baseball bat", "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup",
-           "fork", "knife ",
-           "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza ", "donut",
-           "cake", "chair", "sofa",
-           "pottedplant", "bed", "diningtable", "toilet ", "tvmonitor", "laptop	", "mouse	", "remote ",
-           "keyboard ", "cell phone", "microwave ",
-           "oven ", "toaster", "sink", "refrigerator ", "book", "clock", "vase", "scissors ", "teddy bear ",
-           "hair drier", "toothbrush ")
+CLASSES = ('tank', 'btr', 'bmp', 'soldier', 'corpse')
+
+# CLASSES = ("person", "bicycle", "car", "motorbike ", "aeroplane ", "bus ", "train", "truck ", "boat", "traffic light",
+#            "fire hydrant", "stop sign ", "parking meter", "bench", "bird", "cat", "dog ", "horse ", "sheep", "cow",
+#            "elephant",
+#            "bear", "zebra ", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis",
+#            "snowboard", "sports ball", "kite",
+#            "baseball bat", "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup",
+#            "fork", "knife ",
+#            "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza ", "donut",
+#            "cake", "chair", "sofa",
+#            "pottedplant", "bed", "diningtable", "toilet ", "tvmonitor", "laptop	", "mouse	", "remote ",
+#            "keyboard ", "cell phone", "microwave ",
+#            "oven ", "toaster", "sink", "refrigerator ", "book", "clock", "vase", "scissors ", "teddy bear ",
+#            "hair drier", "toothbrush ")
 
 coco_id_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 27, 28, 31, 32,
                 33, 34,
@@ -172,11 +174,13 @@ def draw(image, boxes, scores, classes):
     classes_set = list(set(classes))
     for boxe, score, classe in zip(boxes, scores, classes):
         classe_index = classes_set.index(classe)
-        top, left, right, bottom = [int(_b) for _b in boxe]
-        print("%s @ (%d %d %d %d) %.3f" % (CLASSES[classe], top, left, right, bottom, score))
-        cv2.rectangle(image, (top, left), (right, bottom), color[classe_index % 3], 2)
+        left, top, right, bottom = [int(_b) for _b in boxe]
+        print("%s @ (%d %d %d %d) %.3f" % (CLASSES[classe], left, top, right, bottom, score))
+        cv2.rectangle(image, (left, top), (right, bottom), color[classe_index % 3], 2)
+        if top < 30:
+            top = 30
         cv2.putText(image, '{0} {1:.2f}'.format(CLASSES[classe], score),
-                    (top, left - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color[classe_index % 3], 2)
+                    (left + 6, top - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color[classe_index % 3], 2)
 
 
 
@@ -191,8 +195,10 @@ def img_check(path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
     # # basic params
-    parser.add_argument('--model_path', type=str, default='./model/yolov8n.rknn', help='model path, could be .pt or .rknn file')
+    # parser.add_argument('--model_path', type=str, default='./model/yolov8n.rknn', help='model path, could be .pt or .rknn file')
+    parser.add_argument('--model_path', type=str, default='/home/orangepi/python-projects/yolov8_rknn-toolkit2-lite/best5n.rknn', help='model path, could be .pt or .rknn file')
     parser.add_argument('--target', type=str, default='rk3588', help='target RKNPU platform')
+    #parser.add_argument('--img_folder', type=str, default='./imgs', help='img folder for inference')
     parser.add_argument('--img_folder', type=str, default='./imgs', help='img folder for inference')
     parser.add_argument('--img_save', action='store_true', default=True, help='save the result')
 

@@ -3,6 +3,8 @@ import cv2
 import sys
 import time
 import argparse
+import re
+
 from rknnlite.api import RKNNLite
 from scipy.special import softmax
 
@@ -201,6 +203,12 @@ def img_check(path):
     return False
 
 
+# Define a function to extract the numeric part of the filename
+def extract_number(filename):
+    match = re.search(r'\d+', filename)
+    return int(match.group()) if match else 0
+
+
 if __name__ == '__main__':
     current_directory = os.getcwd()
     print("Current Directory:", current_directory)
@@ -211,9 +219,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
     # # basic params
     # parser.add_argument('--model_path', type=str, default='./model/yolov8n.rknn', help='model path, could be .pt or .rknn file')
-    parser.add_argument('--model_path', type=str, default='bucket_box_ball_epochs_100.rknn', help='model path, could be .pt or .rknn file')
+    parser.add_argument('--model_path', type=str, default='model/bucket_box_ball_epochs_100.rknn', help='model path, could be .pt or .rknn file')
     parser.add_argument('--target', type=str, default='rk3588', help='target RKNPU platform')
-    parser.add_argument('--video_path', type=str, default='video/20240606_160328.mp4', help='video path for inference')
+    parser.add_argument('--images_folder', type=str, default='images', help='images folder path for inference')
     
 
     args = parser.parse_args()
@@ -244,12 +252,24 @@ if __name__ == '__main__':
         exit(ret)
     print('done')
 
-    video_path = os.path.join(base_dir, args.video_path)
-    cap = cv2.VideoCapture(video_path)  # For Video
+    images_folder = os.path.join(base_dir, args.images_folder)
+    
+    # file_list = sorted(os.listdir(images_folder))
+    # print(file_list)
 
-    # Get the width and height of the video
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # Get the list of files
+    file_list = os.listdir(images_folder)
+
+    # Sort the list using the custom key
+    file_list = sorted(file_list, key=extract_number)
+    print(file_list)
+
+
+    img_list = []
+    for path in file_list:
+        if img_check(path):
+            img_list.append(path)
 
     
 
@@ -258,59 +278,69 @@ if __name__ == '__main__':
     frame_count = 0
     start_time = time.time()
 
-    while True:
-        success, img_src = cap.read()
-        if not success:
-            print("End of video or error reading frame.")
-            break  # Exit the loop if the video ends or there is an error
-            # print("Err read frame")
-            # continue
+
+
+    # run test
+    #for i in range(len(img_list)):
+    i=0
+    while True:    
+        #print('infer {}/{}'.format(i + 1, img_list[i]), end='\r')
+
+        img_name = img_list[i]
+        img_path = os.path.join(images_folder, img_name)
+        if not os.path.exists(img_path):
+            print("{} is not found", img_name)
+            continue
+
+        img_src = cv2.imread(img_path)
+        if img_src is None:
+            continue
+
 
         frame_count += 1
         
         # Calculate and print the FPS every 30 frames
-        if frame_count % 30 == 0:
+        if frame_count % 10 == 0:
             elapsed_time = time.time() - start_time
             fps = int(frame_count / elapsed_time)
             print(f"FPS: {fps:.2f}")
 
-        # if frame_count % 2 == 0:
-        if frame_count > -1:
-            # Get the width and height of the image
-            height, width = img_src.shape[:2]
-            
+        # Due to rga init with (0,0,0), we using pad_color (0,0,0) instead of (114, 114, 114)
+        pad_color = (0, 0, 0)
+        img = co_helper.letter_box(im=img_src.copy(), new_shape=(IMG_SIZE[1], IMG_SIZE[0]), pad_color=(0, 0, 0))
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = np.expand_dims(img, 0)
 
-            # print(img_src)
+        input_data = img
+        # print('--> Running model ')
+        outputs = rknn_lite.inference(inputs=[input_data])
+        boxes, classes, scores = post_process(outputs)
 
-
-            # img_src = cv2.imread(img_path)
-            if img_src is None:
-                continue
-
-            # Due to rga init with (0,0,0), we using pad_color (0,0,0) instead of (114, 114, 114)
-            pad_color = (0, 0, 0)
-            img = co_helper.letter_box(im=img_src.copy(), new_shape=(IMG_SIZE[1], IMG_SIZE[0]), pad_color=(0, 0, 0))
-            height, width = img.shape[:2]
-            
-
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            img = np.expand_dims(img, 0)
-
-            input_data = img
-            #print('--> Running model ')
-            outputs = rknn_lite.inference(inputs=[input_data])
-            boxes, classes, scores = post_process(outputs)
+        current_class_names = []
+        for k in range(len(classes)):
+            current_class_names.append(CLASSES[classes[k]])
         
-            img_p = img_src.copy()
-            if boxes is not None:
-                draw(img_p, co_helper.get_real_box(boxes), scores, classes)
+        print(current_class_names)
 
-            if fps is not None:
-                cv2.putText(img_p, 'fps={0} '.format(fps), (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
-            img_shape = img_p.shape
-            cv2.imshow('Image', img_p)
-            cv2.waitKey(1)
+        img_p = img_src.copy()
+        if boxes is not None:
+            draw(img_p, co_helper.get_real_box(boxes), scores, classes)
 
-    cap.release()  # Release the video capture object
+        if fps is not None:
+            cv2.putText(img_p, 'fps={0} '.format(fps), (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+        img_shape = img_p.shape
+        cv2.imshow('Image', img_p)
+        cv2.waitKey(1)
+
+        i+=1
+        # print(i)
+        if i==len(img_list):
+            i=0
+
+
     cv2.destroyAllWindows()  # Close all OpenCV windows
+
+
+    

@@ -196,7 +196,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
     # # basic params
     # parser.add_argument('--model_path', type=str, default='./model/yolov8n.rknn', help='model path, could be .pt or .rknn file')
-    parser.add_argument('--model_path', type=str, default='/home/orangepi/python-projects/yolov8_rknn-toolkit2-lite/best5n.rknn', help='model path, could be .pt or .rknn file')
+    parser.add_argument('--model_path', type=str, default='/home/orangepi/python-projects/yolov8_rknn-toolkit2-lite/model/best5n.rknn', help='model path, could be .pt or .rknn file')
     parser.add_argument('--target', type=str, default='rk3588', help='target RKNPU platform')
     #parser.add_argument('--img_folder', type=str, default='./imgs', help='img folder for inference')
     parser.add_argument('--img_folder', type=str, default='./imgs', help='img folder for inference')
